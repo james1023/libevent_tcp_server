@@ -19,6 +19,12 @@ CALCU_STATE HandleCalcuType(char *in, CALCU_STATE state, int *total)
 	int cal_num = 0;
 
 	do {
+		if (NULL == in) {
+			state = CALCU_STATE_INVALID;
+			DEBUG_TRACE(GETBUG_DBG, ("???#%d %s: state=%d, error. \n", __LINE__, __FUNCTION__, state));
+			break;
+		}
+
 		if (CALCU_STATE_DEC == state) {
 			if (0 == strcmp(in, "add")) {
 				state = CALCU_STATE_ADD;
@@ -42,7 +48,7 @@ CALCU_STATE HandleCalcuType(char *in, CALCU_STATE state, int *total)
 			}
 			else {
 				state = CALCU_STATE_INVALID;
-				DEBUG_TRACE(GETBUG_DBG, ("???#%d HandleCalcuType: state=%d, error. \n", __LINE__, state));
+				DEBUG_TRACE(GETBUG_DBG, ("???#%d %s: state=%d, error. \n", __LINE__, __FUNCTION__, state));
 				break;
 			}
 		}
@@ -50,9 +56,15 @@ CALCU_STATE HandleCalcuType(char *in, CALCU_STATE state, int *total)
 			try { cal_num = boost::lexical_cast<int>(in); }
 			catch (const boost::bad_lexical_cast &) {
 				state = CALCU_STATE_INVALID;
+				DEBUG_TRACE(GETBUG_DBG, ("???#%d %s: state=%d, error. \n", __LINE__, __FUNCTION__, state));
 				break;
 			}
 
+			if (NULL == total) {
+				state = CALCU_STATE_INVALID;
+				DEBUG_TRACE(GETBUG_DBG, ("???#%d %s: state=%d, error. \n", __LINE__, __FUNCTION__, state));
+				break;
+			}
 			if (state == CALCU_STATE_ADD)
 				*total += cal_num;
 			else if (state == CALCU_STATE_SUBTRACT)
@@ -62,6 +74,7 @@ CALCU_STATE HandleCalcuType(char *in, CALCU_STATE state, int *total)
 			else if (state == CALCU_STATE_DIVIDE) {
 				if (cal_num == 0) {
 					state = CALCU_STATE_EXCEPTION;
+					DEBUG_TRACE(GETBUG_DBG, ("???#%d %s: state=%d, error. \n", __LINE__, __FUNCTION__, state));
 					break;
 				}
 				*total /= cal_num;
@@ -81,9 +94,14 @@ CALCU_STATE HandleEvaluate(char *msg, int *total)
 	char *token = NULL;
 
 	do {
+		if (NULL == msg || NULL == total) {
+			state = CALCU_STATE_INVALID;
+			DEBUG_TRACE(GETBUG_DBG, ("???#%d %s: state=%d, error. \n", __LINE__, __FUNCTION__, state));
+			break;
+		}
+
 		token = strtok_r(msg, ",\n", &lasts);
 		while (token != NULL) {
-			
 			state = HandleCalcuType(token, state, total);
 			if (CALCU_STATE_INVALID == state ||
 				CALCU_STATE_EXCEPTION == state ||
@@ -109,8 +127,10 @@ void evaluate_cb(struct evhttp_request *req, void *arg)
 	string reply_msg;
 
 	do {
-		if (NULL == req->uri) {
-			DEBUG_TRACE(AVC_DBG, ("#%d evaluate_cb: no uri, error. \n", __LINE__));
+		if (NULL == server || 
+			NULL == req ||
+			NULL == req->uri) {
+			DEBUG_TRACE(AVC_DBG, ("#%d evaluate_cb: param=NULL, error. \n", __LINE__));
 			break;
 		}
 
