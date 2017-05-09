@@ -87,11 +87,12 @@ CALCU_STATE HandleCalcuType(char *in, CALCU_STATE state, int *total)
 	return state;
 }
 
-CALCU_STATE HandleEvaluate(char *msg, int *total)
+CALCU_STATE HandleEvaluate(const char *msg, int *total)
 {
 	CALCU_STATE state = CALCU_STATE_DEC;
 	char *lasts = NULL;
 	char *token = NULL;
+	char *msg_tmp = NULL;
 
 	do {
 		if (NULL == msg || NULL == total) {
@@ -100,7 +101,9 @@ CALCU_STATE HandleEvaluate(char *msg, int *total)
 			break;
 		}
 
-		token = strtok_r(msg, ",\n", &lasts);
+		msg_tmp = strdup(msg);
+
+		token = strtok_r(msg_tmp, ",\n", &lasts);
 		while (token != NULL) {
 			state = HandleCalcuType(token, state, total);
 			if (CALCU_STATE_INVALID == state ||
@@ -111,6 +114,7 @@ CALCU_STATE HandleEvaluate(char *msg, int *total)
 			token = strtok_r(NULL, ",\n", &lasts);
 		}
 	} while (0);
+	SAFE_FREE(msg_tmp);
 
 	return state;
 }
